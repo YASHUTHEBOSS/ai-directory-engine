@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Tools Directory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+    <header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                    <span class="text-indigo-400">⚡</span> AI Video Tools
+                </h1>
+                <p class="text-xs text-slate-400 mt-0.5">Automated benchmark directory for creators</p>
+            </div>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                ● Live Auto-Sync
+            </span>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-10">
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-slate-200">Featured Video & Voice AI Platforms</h2>
+            <p class="text-sm text-slate-400">Direct links, real free-tier specs, and export limits.</p>
+        </div>
+
+        <div id="loading" class="text-center py-16 border border-slate-800 rounded-xl bg-slate-950/40">
+            <p class="text-slate-400">Loading tools from Supabase...</p>
+        </div>
+
+        <div id="error-message" class="hidden text-center py-16 border border-red-900/50 rounded-xl bg-red-950/20">
+            <p class="text-red-400"></p>
+        </div>
+
+        <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = "https://kukdlcvoykveyisyjmdp.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a2RsY3ZveWt2ZXlpc3lqbWRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwODczODMsImV4cCI6MjEwMzY2MzM4M30.Lf6xUCWjDVoDypa0iTHA9iyMs4RBltzZcCuLjW0VfOs";
+
+        async function fetchTools() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/ai_tools?select=*&order=created_at.desc`, {
+                    method: 'GET',
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Supabase Error: ${response.status} ${response.statusText}`);
+                }
+
+                const tools = await response.json();
+                
+                document.getElementById('loading').classList.add('hidden');
+                const grid = document.getElementById('tools-grid');
+                grid.classList.remove('hidden');
+
+                if (tools.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500">No tools found in the database.</div>`;
+                    return;
+                }
+
+                grid.innerHTML = tools.map(tool => `
+                    <div class="flex flex-col justify-between bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/5 group">
+                        <div>
+                            <div class="flex items-start justify-between gap-4 mb-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="${tool.logo_url || 'https://via.placeholder.com/48'}" 
+                                         alt="${tool.tool_name}" 
+                                         class="w-11 h-11 rounded-xl bg-slate-800 p-1 object-contain border border-slate-700">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">
+                                            ${tool.tool_name}
+                                        </h3>
+                                        <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mt-0.5">
+                                            ${tool.category || 'AI Tool'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Pricing</span>
+                                    <span class="font-medium text-slate-200">
+                                        ${tool.starting_price_usd ? '$' + Number(tool.starting_price_usd).toFixed(2) + '/mo' : 'Free'}
+                                    </span>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Max Duration</span>
+                                    <span class="font-medium text-slate-200">
+                                        ${tool.max_video_length_seconds ? (tool.max_video_length_seconds / 60) + ' mins' : 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                                ${tool.bluf_summary || 'No summary available.'}
+                            </p>
+                        </div>
+
+                        <div>
+                            <a href="${tool.affiliate_url || tool.website_url || '#'}" 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-600/20 text-sm">
+                                Try ${tool.tool_name}
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                document.getElementById('loading').classList.add('hidden');
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.classList.remove('hidden');
+                errorDiv.innerHTML = `<p class="text-red-400 font-bold">Failed to load data.</p><p class="text-sm mt-2">${error.message}</p>`;
+            }
+        }
+
+        fetchTools();
+    </script>
+</body>
+</html>
