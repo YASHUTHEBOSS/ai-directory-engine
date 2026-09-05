@@ -1,73 +1,88 @@
 import os
+import re
 import requests
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-# 1. Load local .env file if present; safely ignored on GitHub Actions
+# 1. Setup Database Connection
 load_dotenv()
-
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")  # Matches your GitHub Secret name exactly
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# 2. Initialize the Supabase Client (Admin Mode)
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("❌ Error: Missing Supabase keys. Check your environment configuration.")
     exit(1)
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def scrape_new_tools():
-    """
-    Simulating the agent discovering two new video tools and extracting structured data.
-    """
-    print("🔍 Agent scanning for new AI Video Tools...")
+def scrape_live_tools():
+    print("🔍 Crawling the web for live AI tools...")
     
-    discovered_tools = [
-        {
-            "tool_name": "Invideo AI",
-            "slug": "invideo-ai",
-            "category": "Video Generation",
-            "logo_url": "https://invideo.io/favicon.ico",
-            "website_url": "https://invideo.io",
-            "affiliate_url": "https://invideo.io/?ref=your_affiliate_id",
-            "has_free_tier": True,
-            "starting_price_usd": 20.00,
-            "max_video_length_seconds": 900,
-            "forces_watermark": True,
-            "bluf_summary": "Invideo AI generates highly engaging faceless YouTube Shorts with stock footage, but forces a prominent watermark on the free tier."
-        },
-        {
-            "tool_name": "ElevenLabs",
-            "slug": "elevenlabs",
-            "category": "AI Voice Generation",
-            "logo_url": "https://elevenlabs.io/favicon.ico",
-            "website_url": "https://elevenlabs.io",
-            "affiliate_url": "https://elevenlabs.io/?ref=your_affiliate_id",
-            "has_free_tier": True,
-            "starting_price_usd": 5.00,
-            "max_video_length_seconds": 600,
-            "forces_watermark": False,
-            "bluf_summary": "ElevenLabs provides the most realistic AI voice cloning for video creators. The $5 tier is mandatory for commercial YouTube rights."
-        }
-    ]
+    # Target: A public, anti-bot-free AI directory to ensure consistent daily scraping
+    url = "https://github.com/steven2358/awesome-generative-ai"
     
+    # Fetch the raw HTML content
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"❌ Failed to fetch webpage. Status: {response.status_code}")
+        return []
+        
+    # Parse the HTML tree
+    soup = BeautifulSoup(response.text, "html.parser")
+    
+    # Locate the main content body
+    article = soup.find("article", class_="markdown-body")
+    if not article:
+        return []
+
+    discovered_tools = []
+    
+    # Extract data by finding all list items <li> containing anchor tags <a>
+    for li in article.find_all("li"):
+        link = li.find("a")
+        
+        # Verify it is an external link
+        if link and link.get("href", "").startswith("http"):
+            tool_name = link.text.strip()
+            website_url = link["href"]
+            
+            # The summary is the remaining text after the link
+            full_text = li.text.strip()
+            description = full_text.replace(tool_name, "", 1).strip(" -:—")
+            
+            # Filter for valid, substantial entries
+            if 2 < len(tool_name) < 30 and len(description) > 15:
+                # Generate a clean URL slug (e.g., "Chat GPT" -> "chat-gpt")
+                slug = re.sub(r'[^a-z0-9]+', '-', tool_name.lower()).strip('-')
+                
+                discovered_tools.append({
+                    "tool_name": tool_name,
+                    "slug": slug,
+                    "category": "Generative AI",
+                    "website_url": website_url,
+                    "has_free_tier": True,
+                    "bluf_summary": description[:200] + "..." if len(description) > 200 else description
+                })
+                
+                # Limit to 6 new tools per run to protect free database limits
+                if len(discovered_tools) >= 6:
+                    break
+                    
     return discovered_tools
 
 def update_database(tools):
-    """
-    Takes discovered tools and upserts them into Supabase.
-    """
-    print(f"📥 Attempting to insert {len(tools)} tools into Supabase...")
-    
+    if not tools:
+        print("No tools found.")
+        return
+        
+    print(f"📥 Attempting to insert {len(tools)} live tools into Supabase...")
     try:
         response = supabase.table("ai_tools").upsert(tools).execute()
-        print("✅ Success! The database has been updated.")
-        print(f"📊 Rows affected: {len(response.data)}")
-        
+        print(f"✅ Success! {len(tools)} real tools added to your live directory.")
     except Exception as e:
         print(f"❌ Database Error: {e}")
 
-# 3. Run the Agent
 if __name__ == "__main__":
-    new_tools = scrape_new_tools()
+    new_tools = scrape_live_tools()
     update_database(new_tools)
