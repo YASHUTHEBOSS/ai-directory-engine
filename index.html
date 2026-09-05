@@ -169,7 +169,24 @@ function renderTools(tools) {
             });
             renderTools(filtered);
         });
-
+// Silent Visitor Tracker
+        async function logVisit() {
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/site_visits`, {
+                    method: 'POST',
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    body: JSON.stringify({})
+                });
+            } catch (e) {
+                console.error("Tracking error bypassed");
+            }
+        }
+        logVisit();
         fetchTools();
     </script>
 </body>
