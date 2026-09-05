@@ -12,7 +12,7 @@
         <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                    <span class="text-indigo-400">⚡</span> AI Video Tools
+                    <span class="text-indigo-400">⚡</span> AI Tools Directory
                 </h1>
                 <p class="text-xs text-slate-400 mt-0.5">Automated benchmark directory for creators</p>
             </div>
@@ -23,9 +23,23 @@
     </header>
 
     <main class="max-w-6xl mx-auto px-6 py-10">
-        <div class="mb-8">
-            <h2 class="text-xl font-bold text-slate-200">Featured Video & Voice AI Platforms</h2>
-            <p class="text-sm text-slate-400">Direct links, real free-tier specs, and export limits.</p>
+        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-slate-200">Featured AI Platforms</h2>
+                <p class="text-sm text-slate-400">Direct links, real free-tier specs, and live directory entries.</p>
+            </div>
+            
+            <div class="w-full md:w-80">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Search by name, category, or keyword..." 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                    >
+                    <span class="absolute right-3 top-2.5 text-slate-500 pointer-events-none">🔍</span>
+                </div>
+            </div>
         </div>
 
         <div id="loading" class="text-center py-16 border border-slate-800 rounded-xl bg-slate-950/40">
@@ -40,8 +54,72 @@
     </main>
 
     <script>
-        const SUPABASE_URL = "https://kukdlcvoykveyisyjmdp.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a2RsY3ZveWt2ZXlpc3lqbWRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwODczODMsImV4cCI6MjEwMzY2MzM4M30.Lf6xUCWjDVoDypa0iTHA9iyMs4RBltzZcCuLjW0VfOs";
+        const SUPABASE_URL = "YOUR_SUPABASE_URL";
+        const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+        let allTools = [];
+
+        function renderTools(tools) {
+            const grid = document.getElementById('tools-grid');
+
+            if (tools.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No matching AI tools found.</div>`;
+                return;
+            }
+
+            grid.innerHTML = tools.map(tool => `
+                <div class="flex flex-col justify-between bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/5 group">
+                    <div>
+                        <div class="flex items-start justify-between gap-4 mb-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${tool.logo_url || 'https://via.placeholder.com/48'}" 
+                                     alt="${tool.tool_name}" 
+                                     class="w-11 h-11 rounded-xl bg-slate-800 p-1 object-contain border border-slate-700">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">
+                                        ${tool.tool_name}
+                                    </h3>
+                                    <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mt-0.5">
+                                        ${tool.category || 'Generative AI'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Pricing</span>
+                                <span class="font-medium text-slate-200">
+                                    ${tool.starting_price_usd ? '$' + Number(tool.starting_price_usd).toFixed(2) + '/mo' : (tool.has_free_tier ? 'Free Tier' : 'Paid')}
+                                </span>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Duration</span>
+                                <span class="font-medium text-slate-200">
+                                    ${tool.max_video_length_seconds ? (tool.max_video_length_seconds / 60) + ' mins' : 'Varies'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                            ${tool.bluf_summary || 'No summary available.'}
+                        </p>
+                    </div>
+
+                    <div>
+                        <a href="${tool.affiliate_url || tool.website_url || '#'}" 
+                           target="_blank" 
+                           rel="noopener noreferrer" 
+                           class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-600/20 text-sm">
+                            Try ${tool.tool_name}
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         async function fetchTools() {
             try {
@@ -58,69 +136,12 @@
                     throw new Error(`Supabase Error: ${response.status} ${response.statusText}`);
                 }
 
-                const tools = await response.json();
+                allTools = await response.json();
                 
                 document.getElementById('loading').classList.add('hidden');
-                const grid = document.getElementById('tools-grid');
-                grid.classList.remove('hidden');
+                document.getElementById('tools-grid').classList.remove('hidden');
 
-                if (tools.length === 0) {
-                    grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500">No tools found in the database.</div>`;
-                    return;
-                }
-
-                grid.innerHTML = tools.map(tool => `
-                    <div class="flex flex-col justify-between bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/5 group">
-                        <div>
-                            <div class="flex items-start justify-between gap-4 mb-4">
-                                <div class="flex items-center gap-3">
-                                    <img src="${tool.logo_url || 'https://via.placeholder.com/48'}" 
-                                         alt="${tool.tool_name}" 
-                                         class="w-11 h-11 rounded-xl bg-slate-800 p-1 object-contain border border-slate-700">
-                                    <div>
-                                        <h3 class="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">
-                                            ${tool.tool_name}
-                                        </h3>
-                                        <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mt-0.5">
-                                            ${tool.category || 'AI Tool'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
-                                <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
-                                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Pricing</span>
-                                    <span class="font-medium text-slate-200">
-                                        ${tool.starting_price_usd ? '$' + Number(tool.starting_price_usd).toFixed(2) + '/mo' : 'Free'}
-                                    </span>
-                                </div>
-                                <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
-                                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Max Duration</span>
-                                    <span class="font-medium text-slate-200">
-                                        ${tool.max_video_length_seconds ? (tool.max_video_length_seconds / 60) + ' mins' : 'N/A'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                                ${tool.bluf_summary || 'No summary available.'}
-                            </p>
-                        </div>
-
-                        <div>
-                            <a href="${tool.affiliate_url || tool.website_url || '#'}" 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-600/20 text-sm">
-                                Try ${tool.tool_name}
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                `).join('');
+                renderTools(allTools);
 
             } catch (error) {
                 document.getElementById('loading').classList.add('hidden');
@@ -129,6 +150,18 @@
                 errorDiv.innerHTML = `<p class="text-red-400 font-bold">Failed to load data.</p><p class="text-sm mt-2">${error.message}</p>`;
             }
         }
+
+        // Real-time Search Event Listener
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const filtered = allTools.filter(tool => {
+                const nameMatch = tool.tool_name ? tool.tool_name.toLowerCase().includes(query) : false;
+                const summaryMatch = tool.bluf_summary ? tool.bluf_summary.toLowerCase().includes(query) : false;
+                const categoryMatch = tool.category ? tool.category.toLowerCase().includes(query) : false;
+                return nameMatch || summaryMatch || categoryMatch;
+            });
+            renderTools(filtered);
+        });
 
         fetchTools();
     </script>
