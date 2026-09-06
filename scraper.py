@@ -51,15 +51,23 @@ def scrape_live_tools():
             full_text = li.text.strip()
             description = full_text.replace(tool_name, "", 1).strip(" -:—")
             
-            # Filter for valid, substantial entries
+           # Filter for valid, substantial entries
             if 2 < len(tool_name) < 30 and len(description) > 15:
                 # Generate a clean URL slug (e.g., "Chat GPT" -> "chat-gpt")
                 slug = re.sub(r'[^a-z0-9]+', '-', tool_name.lower()).strip('-')
                 
+                # 💥 NEW: Auto-detect the category by reading the webpage headers
+                category_name = "Generative AI"
+                parent_list = li.find_parent(["ul", "ol"])
+                if parent_list:
+                    header = parent_list.find_previous_sibling(["h2", "h3"])
+                    if header:
+                        category_name = header.text.strip()
+                
                 discovered_tools.append({
                     "tool_name": tool_name,
                     "slug": slug,
-                    "category": "Generative AI",
+                    "category": category_name, # Updated to use the detected category
                     "website_url": website_url,
                     "has_free_tier": True,
                     "bluf_summary": description[:200] + "..." if len(description) > 200 else description
