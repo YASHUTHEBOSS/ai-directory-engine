@@ -66,9 +66,7 @@ def scrape_live_tools():
                 })
                 
                 # Limit to 6 new tools per run to protect free database limits
-                if len(discovered_tools) >= 6:
-                    break
-                    
+
     return discovered_tools
 
 def update_database(tools):
