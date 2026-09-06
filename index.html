@@ -23,7 +23,7 @@
     </header>
 
     <main class="max-w-6xl mx-auto px-6 py-10">
-        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
                 <h2 class="text-xl font-bold text-slate-200">Featured AI Platforms</h2>
                 <p class="text-sm text-slate-400">Direct links, real free-tier specs, and live directory entries.</p>
@@ -34,13 +34,16 @@
                     <input 
                         type="text" 
                         id="search-input" 
-                        placeholder="Search by name, category, or keyword..." 
+                        placeholder="Search by name or keyword..." 
                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
                     >
                     <span class="absolute right-3 top-2.5 text-slate-500 pointer-events-none">🔍</span>
                 </div>
             </div>
         </div>
+
+        <!-- NEW: Dynamic Category Buttons -->
+        <div id="category-filters" class="flex flex-wrap gap-2 mb-8"></div>
 
         <div id="loading" class="text-center py-16 border border-slate-800 rounded-xl bg-slate-950/40">
             <p class="text-slate-400">Loading tools from Supabase...</p>
@@ -54,21 +57,51 @@
     </main>
 
     <script>
-        const SUPABASE_URL = "https://kukdlcvoykveyisyjmdp.supabase.co";
+        const SUPABASE_URL = "https://kukdlcvoykveyisyjmdp.supabase.coL";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a2RsY3ZveWt2ZXlpc3lqbWRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwODczODMsImV4cCI6MjEwMzY2MzM4M30.Lf6xUCWjDVoDypa0iTHA9iyMs4RBltzZcCuLjW0VfOs";
 
         let allTools = [];
+        let currentCategory = 'All';
 
-function renderTools(tools) {
+        function renderCategories() {
+            const container = document.getElementById('category-filters');
+            // Extract unique categories directly from the database data
+            const categories = ['All', ...new Set(allTools.map(t => t.category).filter(Boolean))];
+            
+            container.innerHTML = categories.map(cat => `
+                <button onclick="filterTools('${cat}')" 
+                        class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${currentCategory === cat ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-600'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function filterTools(category = currentCategory) {
+            currentCategory = category;
+            renderCategories(); // Update button colors
+            
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            const filtered = allTools.filter(tool => {
+                const matchesCat = currentCategory === 'All' || tool.category === currentCategory;
+                const nameMatch = tool.tool_name ? tool.tool_name.toLowerCase().includes(searchTerm) : false;
+                const summaryMatch = tool.bluf_summary ? tool.bluf_summary.toLowerCase().includes(searchTerm) : false;
+                
+                return matchesCat && (nameMatch || summaryMatch || searchTerm === '');
+            });
+            
+            renderGrid(filtered);
+        }
+
+        function renderGrid(tools) {
             const grid = document.getElementById('tools-grid');
 
             if (tools.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No matching AI tools found.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 bg-slate-950 rounded-xl border border-slate-800">No matching AI tools found in this category.</div>`;
                 return;
             }
 
             grid.innerHTML = tools.map(tool => {
-                // Extract the domain (e.g., 'openai.com') to fetch the logo dynamically
                 let domain = '';
                 try { domain = new URL(tool.website_url).hostname; } catch(e) {}
                 const liveLogo = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
@@ -91,36 +124,16 @@ function renderTools(tools) {
                                 </div>
                             </div>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-2 text-xs mb-4">
-                            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
-                                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Pricing</span>
-                                <span class="font-medium text-slate-200">
-                                    ${tool.starting_price_usd ? '$' + Number(tool.starting_price_usd).toFixed(2) + '/mo' : (tool.has_free_tier ? 'Free Tier' : 'Paid')}
-                                </span>
-                            </div>
-                            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
-                                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Duration</span>
-                                <span class="font-medium text-slate-200">
-                                    ${tool.max_video_length_seconds ? (tool.max_video_length_seconds / 60) + ' mins' : 'Varies'}
-                                </span>
-                            </div>
-                        </div>
-
                         <p class="text-slate-400 text-sm leading-relaxed mb-6">
                             ${tool.bluf_summary || 'No summary available.'}
                         </p>
                     </div>
-
                     <div>
                         <a href="${tool.affiliate_url || tool.website_url || '#'}" 
                            target="_blank" 
                            rel="noopener noreferrer" 
                            class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-600/20 text-sm">
                             Try ${tool.tool_name}
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                            </svg>
                         </a>
                     </div>
                 </div>
@@ -139,55 +152,37 @@ function renderTools(tools) {
                     }
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Supabase Error: ${response.status} ${response.statusText}`);
-                }
-
+                if (!response.ok) throw new Error(`Supabase Error: ${response.status}`);
                 allTools = await response.json();
                 
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('tools-grid').classList.remove('hidden');
 
-                renderTools(allTools);
+                // Render everything initially
+                filterTools('All');
 
             } catch (error) {
                 document.getElementById('loading').classList.add('hidden');
-                const errorDiv = document.getElementById('error-message');
-                errorDiv.classList.remove('hidden');
-                errorDiv.innerHTML = `<p class="text-red-400 font-bold">Failed to load data.</p><p class="text-sm mt-2">${error.message}</p>`;
+                document.getElementById('error-message').classList.remove('hidden');
             }
         }
 
-        // Real-time Search Event Listener
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim();
-            const filtered = allTools.filter(tool => {
-                const nameMatch = tool.tool_name ? tool.tool_name.toLowerCase().includes(query) : false;
-                const summaryMatch = tool.bluf_summary ? tool.bluf_summary.toLowerCase().includes(query) : false;
-                const categoryMatch = tool.category ? tool.category.toLowerCase().includes(query) : false;
-                return nameMatch || summaryMatch || categoryMatch;
-            });
-            renderTools(filtered);
-        });
-// Silent Visitor Tracker
+        // Live Search Event Listener (now respects categories)
+        document.getElementById('search-input').addEventListener('input', () => filterTools());
+
+        // Silent Visitor Tracker
         async function logVisit() {
             try {
                 await fetch(`${SUPABASE_URL}/rest/v1/site_visits`, {
                     method: 'POST',
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
                     body: JSON.stringify({})
                 });
-            } catch (e) {
-                console.error("Tracking error bypassed");
-            }
+            } catch (e) {}
         }
-        logVisit();
+        
         fetchTools();
+        logVisit();
     </script>
 </body>
 </html>
