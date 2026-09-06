@@ -74,10 +74,14 @@ def update_database(tools):
         print("No tools found.")
         return
         
-    print(f"📥 Attempting to insert {len(tools)} live tools into Supabase...")
+    # 1. Remove any duplicate tools from the scraped list
+    unique_tools = list({tool["slug"]: tool for tool in tools}.values())
+        
+    print(f"📥 Attempting to insert {len(unique_tools)} live tools into Supabase...")
     try:
-        response = supabase.table("ai_tools").upsert(tools).execute()
-        print(f"✅ Success! {len(tools)} real tools added to your live directory.")
+        # 2. Tell Supabase to merge/update data if the 'slug' already exists
+        response = supabase.table("ai_tools").upsert(unique_tools, on_conflict="slug").execute()
+        print(f"✅ Success! {len(unique_tools)} real tools added to your live directory.")
     except Exception as e:
         print(f"❌ Database Error: {e}")
 
