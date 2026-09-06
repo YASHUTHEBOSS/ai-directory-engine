@@ -3,69 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Directory Engine</title>
+    <title>AI Directory Engine | Premium Directory</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Infinite Scroll Animation for Floating Icons */
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-scroll {
+            display: flex;
+            width: max-content;
+            animation: scroll 30s linear infinite;
+        }
+        .animate-scroll:hover {
+            animation-play-state: paused;
+        }
+        /* Custom Scrollbar for a polished look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen">
+<body class="bg-[#0B1120] text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500/30">
 
-    <header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-            <div class="cursor-pointer" onclick="showHomePage()">
-                <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                    <span class="text-indigo-400">⚡</span> AI Directory
-                </h1>
-                <p class="text-xs text-slate-400 mt-0.5">Automated benchmark directory</p>
+    <!-- PROFESSIONAL HEADER -->
+    <header class="border-b border-slate-800/60 bg-[#0B1120]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer group" onclick="showHomePage()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:shadow-cyan-500/40 transition-all">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-white">AI Directory<span class="text-cyan-400">.</span></h1>
+                </div>
             </div>
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                ● Live Auto-Sync
-            </span>
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+                <a href="#" onclick="showHomePage()" class="hover:text-cyan-400 transition-colors">Categories</a>
+                <a href="#" class="hover:text-cyan-400 transition-colors">Trending</a>
+                <a href="#" class="hover:text-cyan-400 transition-colors">Submit Tool</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <span class="hidden sm:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
+                    Live Sync Active
+                </span>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 py-10">
+    <!-- DYNAMIC HERO SECTION WITH FLOATING ICONS -->
+    <section class="relative overflow-hidden border-b border-slate-800/60 bg-slate-900/50 pt-16 pb-12">
+        <!-- Glowing Background Orbs -->
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none"></div>
         
-        <div id="loading" class="text-center py-16 border border-slate-800 rounded-xl bg-slate-950/40">
-            <p class="text-slate-400 animate-pulse">Syncing live tools from database...</p>
+        <div class="max-w-7xl mx-auto px-6 text-center relative z-10 mb-12">
+            <h2 class="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight">
+                Discover the Future of <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">Creation.</span>
+            </h2>
+            <p class="text-lg text-slate-400 max-w-2xl mx-auto">
+                Explore our fully automated, constantly updating directory of the most powerful Generative AI platforms on the web.
+            </p>
         </div>
 
-        <div id="error-message" class="hidden text-center py-16 border border-red-900/50 rounded-xl bg-red-950/20">
-            <p class="text-red-400">Failed to load database.</p>
-        </div>
-
-        <!-- PAGE 1: HOMEPAGE (CATEGORY DIRECTORY) -->
-        <div id="home-view" class="hidden">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-slate-200">Browse by Category</h2>
-                <p class="text-sm text-slate-400 mt-1">Select a category to view available platforms.</p>
-            </div>
-            <div id="category-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <!-- Category Cards Generated Here -->
-            </div>
-        </div>
-
-        <!-- PAGE 2: CATEGORY VIEW (TOOLS LIST) -->
-        <div id="tools-view" class="hidden">
-            <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-                <div>
-                    <button onclick="showHomePage()" class="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-2 mb-3 transition-colors">
-                        ← Back to Categories
-                    </button>
-                    <h2 id="current-category-title" class="text-3xl font-bold text-white capitalize">Category Name</h2>
-                    <p id="current-category-count" class="text-sm text-slate-400 mt-1">0 tools available</p>
+        <!-- Floating Icons Marquee -->
+        <div class="relative w-full overflow-hidden flex items-center h-24 bg-[#0B1120]/50 border-y border-slate-800/50 backdrop-blur-sm">
+            <div class="absolute left-0 w-32 h-full bg-gradient-to-r from-[#0B1120] to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 w-32 h-full bg-gradient-to-l from-[#0B1120] to-transparent z-10 pointer-events-none"></div>
+            
+            <div class="animate-scroll">
+                <!-- Group 1 -->
+                <div class="flex items-center gap-12 px-6">
+                    <img src="https://www.google.com/s2/favicons?domain=openai.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=midjourney.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=anthropic.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=runwayml.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=stability.ai&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=huggingface.co&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=elevenlabs.io&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
                 </div>
-                <div class="w-full sm:w-72">
-                    <div class="relative">
-                        <input type="text" id="search-input" placeholder="Search this category..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
-                    </div>
+                <!-- Group 2 (Duplicate for seamless loop) -->
+                <div class="flex items-center gap-12 px-6">
+                    <img src="https://www.google.com/s2/favicons?domain=openai.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=midjourney.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=anthropic.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=runwayml.com&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=stability.ai&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=huggingface.co&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                    <img src="https://www.google.com/s2/favicons?domain=elevenlabs.io&sz=128" class="w-12 h-12 rounded-2xl grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100 bg-white p-2" alt="Icon">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="max-w-7xl mx-auto px-6 py-16 flex-grow w-full">
+        
+        <div id="loading" class="text-center py-20">
+            <div class="inline-block w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
+            <p class="text-slate-400 font-medium">Syncing live database...</p>
+        </div>
+
+        <div id="error-message" class="hidden text-center py-16 border border-red-900/50 rounded-2xl bg-red-950/20">
+            <p class="text-red-400 font-medium">Failed to connect to Supabase.</p>
+        </div>
+
+        <!-- PAGE 1: CATEGORY FOLDERS -->
+        <div id="home-view" class="hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="category-grid">
+                <!-- Javascript will inject categories here -->
+            </div>
+        </div>
+
+        <!-- PAGE 2: TOOLS INSIDE A CATEGORY -->
+        <div id="tools-view" class="hidden">
+            <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/40 p-6 rounded-3xl border border-slate-800/60">
+                <div>
+                    <button onclick="showHomePage()" class="text-sm font-semibold text-cyan-500 hover:text-cyan-400 flex items-center gap-2 mb-2 transition-colors">
+                        ← Return to Folders
+                    </button>
+                    <h2 id="current-category-title" class="text-3xl font-black text-white capitalize">Category</h2>
+                    <p id="current-category-count" class="text-slate-400 mt-1">0 platforms</p>
+                </div>
+                <div class="w-full md:w-96 relative">
+                    <input type="text" id="search-input" placeholder="Search within category..." class="w-full bg-[#0B1120] border border-slate-700 rounded-xl px-5 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all shadow-inner">
+                    <span class="absolute right-4 top-3.5 opacity-50">🔍</span>
                 </div>
             </div>
             
             <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Tool Cards Generated Here -->
+                <!-- Javascript will inject tools here -->
             </div>
         </div>
-
     </main>
+
+    <!-- PROFESSIONAL FOOTER -->
+    <footer class="border-t border-slate-800/60 bg-slate-900/30 mt-auto">
+        <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-cyan-500">⚡</span>
+                <span class="font-bold text-white text-sm">AI Directory Engine</span>
+            </div>
+            <p class="text-sm text-slate-500">Powered by automated Python scraping & Supabase.</p>
+            <div class="flex items-center gap-6 text-sm font-medium text-slate-500">
+                <a href="#" class="hover:text-cyan-400 transition-colors">Privacy</a>
+                <a href="#" class="hover:text-cyan-400 transition-colors">Terms</a>
+                <a href="https://github.com" target="_blank" class="hover:text-white transition-colors">GitHub</a>
+            </div>
+        </div>
+    </footer>
 
     <script>
         // --- PASTE YOUR CREDENTIALS HERE ---
@@ -86,7 +174,6 @@
                 if (!response.ok) throw new Error(`Supabase Error`);
                 allTools = await response.json();
                 
-                // Group tools into categories automatically
                 groupedCategories = allTools.reduce((acc, tool) => {
                     const cat = tool.category || 'Uncategorized';
                     if (!acc[cat]) acc[cat] = [];
@@ -96,7 +183,6 @@
 
                 document.getElementById('loading').classList.add('hidden');
                 showHomePage();
-
             } catch (error) {
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('error-message').classList.remove('hidden');
@@ -108,15 +194,17 @@
             document.getElementById('home-view').classList.remove('hidden');
             
             const grid = document.getElementById('category-grid');
-            
-            // Generate clickable category cards
             grid.innerHTML = Object.keys(groupedCategories).sort().map(cat => `
                 <div onclick="showCategoryPage('${cat.replace(/'/g, "\\'")}')" 
-                     class="bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 group">
-                    <h3 class="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors mb-2">${cat}</h3>
-                    <span class="inline-block px-2.5 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs font-semibold border border-slate-800">
-                        ${groupedCategories[cat].length} Platforms
-                    </span>
+                     class="bg-slate-900/50 border border-slate-700/50 hover:border-cyan-500/50 rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-cyan-500/10 group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl group-hover:bg-cyan-500/10 transition-colors"></div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors mb-3 relative z-10">${cat}</h3>
+                    <div class="flex items-center justify-between relative z-10">
+                        <span class="inline-block px-3 py-1 rounded-lg bg-[#0B1120] text-slate-300 text-xs font-semibold border border-slate-700/50">
+                            ${groupedCategories[cat].length} Resources
+                        </span>
+                        <span class="text-cyan-500/0 group-hover:text-cyan-500 transition-colors transform translate-x-4 group-hover:translate-x-0 duration-300">→</span>
+                    </div>
                 </div>
             `).join('');
         }
@@ -127,7 +215,7 @@
             document.getElementById('tools-view').classList.remove('hidden');
             
             document.getElementById('current-category-title').innerText = categoryName;
-            document.getElementById('current-category-count').innerText = `${groupedCategories[categoryName].length} tools available`;
+            document.getElementById('current-category-count').innerText = `${groupedCategories[categoryName].length} verified platforms`;
             document.getElementById('search-input').value = ''; 
             
             renderTools(groupedCategories[categoryName]);
@@ -135,9 +223,8 @@
 
         function renderTools(tools) {
             const grid = document.getElementById('tools-grid');
-
             if (tools.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 bg-slate-950 rounded-xl border border-slate-800">No tools found matching your search.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No tools found matching your search.</div>`;
                 return;
             }
 
@@ -147,23 +234,25 @@
                 const liveLogo = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
                 return `
-                <div class="flex flex-col justify-between bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-200">
+                <div class="flex flex-col justify-between bg-slate-900/40 border border-slate-800 hover:border-cyan-500/30 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-900/20 group">
                     <div>
-                        <div class="flex items-center gap-3 mb-4">
-                            <img src="${tool.logo_url || liveLogo}" class="w-11 h-11 rounded-xl bg-white p-1 object-contain border border-slate-700">
-                            <h3 class="text-lg font-bold text-white">${tool.tool_name}</h3>
+                        <div class="flex items-center gap-4 mb-5">
+                            <div class="w-12 h-12 rounded-xl bg-white p-1.5 flex-shrink-0 shadow-sm">
+                                <img src="${tool.logo_url || liveLogo}" class="w-full h-full object-contain" alt="Logo">
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">${tool.tool_name}</h3>
                         </div>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">${tool.bluf_summary || 'No summary available.'}</p>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6 line-clamp-3">${tool.bluf_summary || 'No summary available.'}</p>
                     </div>
-                    <a href="${tool.affiliate_url || tool.website_url || '#'}" target="_blank" class="w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
-                        Visit Website
+                    <a href="${tool.affiliate_url || tool.website_url || '#'}" target="_blank" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-cyan-600 text-white font-semibold py-3 rounded-xl transition-colors text-sm border border-slate-700 hover:border-cyan-500">
+                        Launch Tool
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </a>
                 </div>
                 `;
             }).join('');
         }
 
-        // Live Search within the active category
         document.getElementById('search-input').addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase().trim();
             const filtered = groupedCategories[activeCategory].filter(tool => {
