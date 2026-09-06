@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Video Tools Directory</title>
+    <title>AI Directory Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen">
 
     <header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-            <div>
+            <div class="cursor-pointer" onclick="showHomePage()">
                 <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                    <span class="text-indigo-400">⚡</span> AI Tools Directory
+                    <span class="text-indigo-400">⚡</span> AI Directory
                 </h1>
-                <p class="text-xs text-slate-400 mt-0.5">Automated benchmark directory for creators</p>
+                <p class="text-xs text-slate-400 mt-0.5">Automated benchmark directory</p>
             </div>
             <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 ● Live Auto-Sync
@@ -23,81 +23,121 @@
     </header>
 
     <main class="max-w-6xl mx-auto px-6 py-10">
-        <div class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-                <h2 class="text-xl font-bold text-slate-200">Featured AI Platforms</h2>
-                <p class="text-sm text-slate-400">Direct links, real free-tier specs, and live directory entries.</p>
-            </div>
-            
-            <div class="w-full md:w-80">
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        id="search-input" 
-                        placeholder="Search by name or keyword..." 
-                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-                    >
-                    <span class="absolute right-3 top-2.5 text-slate-500 pointer-events-none">🔍</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- NEW: Dynamic Category Buttons -->
-        <div id="category-filters" class="flex flex-wrap gap-2 mb-8"></div>
-
+        
         <div id="loading" class="text-center py-16 border border-slate-800 rounded-xl bg-slate-950/40">
-            <p class="text-slate-400">Loading tools from Supabase...</p>
+            <p class="text-slate-400 animate-pulse">Syncing live tools from database...</p>
         </div>
 
         <div id="error-message" class="hidden text-center py-16 border border-red-900/50 rounded-xl bg-red-950/20">
-            <p class="text-red-400"></p>
+            <p class="text-red-400">Failed to load database.</p>
         </div>
 
-        <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+        <!-- PAGE 1: HOMEPAGE (CATEGORY DIRECTORY) -->
+        <div id="home-view" class="hidden">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-200">Browse by Category</h2>
+                <p class="text-sm text-slate-400 mt-1">Select a category to view available platforms.</p>
+            </div>
+            <div id="category-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Category Cards Generated Here -->
+            </div>
+        </div>
+
+        <!-- PAGE 2: CATEGORY VIEW (TOOLS LIST) -->
+        <div id="tools-view" class="hidden">
+            <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+                <div>
+                    <button onclick="showHomePage()" class="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-2 mb-3 transition-colors">
+                        ← Back to Categories
+                    </button>
+                    <h2 id="current-category-title" class="text-3xl font-bold text-white capitalize">Category Name</h2>
+                    <p id="current-category-count" class="text-sm text-slate-400 mt-1">0 tools available</p>
+                </div>
+                <div class="w-full sm:w-72">
+                    <div class="relative">
+                        <input type="text" id="search-input" placeholder="Search this category..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tool Cards Generated Here -->
+            </div>
+        </div>
+
     </main>
 
     <script>
+        // --- PASTE YOUR CREDENTIALS HERE ---
         const SUPABASE_URL = "https://kukdlcvoykveyisyjmdp.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a2RsY3ZveWt2ZXlpc3lqbWRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwODczODMsImV4cCI6MjEwMzY2MzM4M30.Lf6xUCWjDVoDypa0iTHA9iyMs4RBltzZcCuLjW0VfOs";
 
         let allTools = [];
-        let currentCategory = 'All';
+        let groupedCategories = {};
+        let activeCategory = '';
 
-        function renderCategories() {
-            const container = document.getElementById('category-filters');
-            // Extract unique categories directly from the database data
-            const categories = ['All', ...new Set(allTools.map(t => t.category).filter(Boolean))];
+        async function fetchTools() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/ai_tools?select=*&order=created_at.desc`, {
+                    method: 'GET',
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" }
+                });
+
+                if (!response.ok) throw new Error(`Supabase Error`);
+                allTools = await response.json();
+                
+                // Group tools into categories automatically
+                groupedCategories = allTools.reduce((acc, tool) => {
+                    const cat = tool.category || 'Uncategorized';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(tool);
+                    return acc;
+                }, {});
+
+                document.getElementById('loading').classList.add('hidden');
+                showHomePage();
+
+            } catch (error) {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error-message').classList.remove('hidden');
+            }
+        }
+
+        function showHomePage() {
+            document.getElementById('tools-view').classList.add('hidden');
+            document.getElementById('home-view').classList.remove('hidden');
             
-            container.innerHTML = categories.map(cat => `
-                <button onclick="filterTools('${cat}')" 
-                        class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${currentCategory === cat ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-600'}">
-                    ${cat}
-                </button>
+            const grid = document.getElementById('category-grid');
+            
+            // Generate clickable category cards
+            grid.innerHTML = Object.keys(groupedCategories).sort().map(cat => `
+                <div onclick="showCategoryPage('${cat.replace(/'/g, "\\'")}')" 
+                     class="bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 group">
+                    <h3 class="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors mb-2">${cat}</h3>
+                    <span class="inline-block px-2.5 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs font-semibold border border-slate-800">
+                        ${groupedCategories[cat].length} Platforms
+                    </span>
+                </div>
             `).join('');
         }
 
-        function filterTools(category = currentCategory) {
-            currentCategory = category;
-            renderCategories(); // Update button colors
+        function showCategoryPage(categoryName) {
+            activeCategory = categoryName;
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('tools-view').classList.remove('hidden');
             
-            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            document.getElementById('current-category-title').innerText = categoryName;
+            document.getElementById('current-category-count').innerText = `${groupedCategories[categoryName].length} tools available`;
+            document.getElementById('search-input').value = ''; 
             
-            const filtered = allTools.filter(tool => {
-                const matchesCat = currentCategory === 'All' || tool.category === currentCategory;
-                const nameMatch = tool.tool_name ? tool.tool_name.toLowerCase().includes(searchTerm) : false;
-                const summaryMatch = tool.bluf_summary ? tool.bluf_summary.toLowerCase().includes(searchTerm) : false;
-                
-                return matchesCat && (nameMatch || summaryMatch || searchTerm === '');
-            });
-            
-            renderGrid(filtered);
+            renderTools(groupedCategories[categoryName]);
         }
 
-        function renderGrid(tools) {
+        function renderTools(tools) {
             const grid = document.getElementById('tools-grid');
 
             if (tools.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 bg-slate-950 rounded-xl border border-slate-800">No matching AI tools found in this category.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 bg-slate-950 rounded-xl border border-slate-800">No tools found matching your search.</div>`;
                 return;
             }
 
@@ -107,70 +147,33 @@
                 const liveLogo = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
                 return `
-                <div class="flex flex-col justify-between bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/5 group">
+                <div class="flex flex-col justify-between bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 transition-all duration-200">
                     <div>
-                        <div class="flex items-start justify-between gap-4 mb-4">
-                            <div class="flex items-center gap-3">
-                                <img src="${tool.logo_url || liveLogo}" 
-                                     alt="${tool.tool_name}" 
-                                     class="w-11 h-11 rounded-xl bg-white p-1 object-contain border border-slate-700">
-                                <div>
-                                    <h3 class="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">
-                                        ${tool.tool_name}
-                                    </h3>
-                                    <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mt-0.5">
-                                        ${tool.category || 'Generative AI'}
-                                    </span>
-                                </div>
-                            </div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <img src="${tool.logo_url || liveLogo}" class="w-11 h-11 rounded-xl bg-white p-1 object-contain border border-slate-700">
+                            <h3 class="text-lg font-bold text-white">${tool.tool_name}</h3>
                         </div>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                            ${tool.bluf_summary || 'No summary available.'}
-                        </p>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">${tool.bluf_summary || 'No summary available.'}</p>
                     </div>
-                    <div>
-                        <a href="${tool.affiliate_url || tool.website_url || '#'}" 
-                           target="_blank" 
-                           rel="noopener noreferrer" 
-                           class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-600/20 text-sm">
-                            Try ${tool.tool_name}
-                        </a>
-                    </div>
+                    <a href="${tool.affiliate_url || tool.website_url || '#'}" target="_blank" class="w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
+                        Visit Website
+                    </a>
                 </div>
                 `;
             }).join('');
         }
 
-        async function fetchTools() {
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/ai_tools?select=*&order=created_at.desc`, {
-                    method: 'GET',
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": "application/json"
-                    }
-                });
+        // Live Search within the active category
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const filtered = groupedCategories[activeCategory].filter(tool => {
+                const nameMatch = tool.tool_name ? tool.tool_name.toLowerCase().includes(searchTerm) : false;
+                const summaryMatch = tool.bluf_summary ? tool.bluf_summary.toLowerCase().includes(searchTerm) : false;
+                return nameMatch || summaryMatch;
+            });
+            renderTools(filtered);
+        });
 
-                if (!response.ok) throw new Error(`Supabase Error: ${response.status}`);
-                allTools = await response.json();
-                
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('tools-grid').classList.remove('hidden');
-
-                // Render everything initially
-                filterTools('All');
-
-            } catch (error) {
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('error-message').classList.remove('hidden');
-            }
-        }
-
-        // Live Search Event Listener (now respects categories)
-        document.getElementById('search-input').addEventListener('input', () => filterTools());
-
-        // Silent Visitor Tracker
         async function logVisit() {
             try {
                 await fetch(`${SUPABASE_URL}/rest/v1/site_visits`, {
